@@ -1,0 +1,15 @@
+<DOCTYPE html>
+<html lang="en">
+  <head>
+  </head>
+<body>
+<% include partials/_header %>
+<ul>
+  <% for (let shortUrl in urls) { %>
+    <% let longUrl = urls[shortUrl]; %>
+    <li><%= shortUrl %><a href="<%= longUrl %>"><%= longUrl %></a></li>
+  <% } %>
+</ul>
+  <a href=#>Shorten a new URL here</a>
+</body>
+</html>

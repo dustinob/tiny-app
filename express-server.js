@@ -22,12 +22,13 @@ app.listen(PORT, () => {
   console.log(`Express Server listening on port ${PORT}!`);
 });
 
-app.get("/hello", (req, res) => {
-  res.end("<html><body>Hello <b>World</b></body></html>\n");
+app.get("/urls", (req, res) => {
+  let templateVars = { urls: urlDatabase };
+  res.render("urls_index", templateVars);
 });
 
-app.get("/urls", (req, res) => {
-  let templaceVars = { urls: urlDatabase };
-  res.render("urls_index", templaceVars);
+app.get("/urls/:id", (reg, res) => {
+  let templateVars = { shortURL: req.params.id };
+  res.render("urls_show", templateVars);
 });
 
