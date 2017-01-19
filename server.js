@@ -13,18 +13,22 @@ var urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+// default Hello to test server is running on root "/"
 app.get("/", (req, res) => {
   res.end("Hello!!");
 });
 
+//parse database to json object... i think
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+//tell server to listen on PORT
 app.listen(PORT, () => {
   console.log(`Express Server listening on port ${PORT}!`);
 });
 
+//take long url and add short url and enter them into the database
 app.post("/urls", (req, res) => {
   var shortURL = generateRandonString();
   var longURL = req.body.longURL;
@@ -32,14 +36,17 @@ app.post("/urls", (req, res) => {
   res.redirect("/urls");
 });
 
+//display all short and long urls on the main page.
 app.get("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
 
+// render new url page
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
+
 
 app.get("/urls/:id", (req, res) => {
   var short = req.params.id;
@@ -51,13 +58,16 @@ app.get("/urls/:id", (req, res) => {
 
 
 app.get("/u/:shortURL", (req, res) => {
-  let shortURL = req.params.shortURL
+  let shortURL = req.params.shortURL;
   let longURL = urlDatabase[shortURL];
   res.redirect(longURL);
 })
 
-app.post("/urls/:shortURL", (req,res) => {
-
+//delete urls from the list
+app.post("/urls/:id/delete", (req,res) => {
+  let shortURL = req.params.id;
+  delete urlDatabase[shortURL];
+  res.redirect("/urls");
 })
 
 

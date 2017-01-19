@@ -11,7 +11,9 @@
     <% let longUrl = urls[shortUrl]; %>
     ShortURL: <a href="/urls/<%= shortUrl%>"><%= shortUrl %></a>
     LongURL: <a href="<%= longUrl %>"><%= longUrl %></a>
-    <button><form method="POST" action="/urls/<%= shortUrl %>/delete">Delete</form></button>
+    <form method="POST" action="/urls/<%= shortUrl %>/delete">
+      <input type="submit" value="Delete">
+    </form>
     </li>
   <% } %>
 </ul>
