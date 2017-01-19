@@ -6,8 +6,8 @@
   </form>
 <% } else { %>
   <form method="POST" action="/logout">
-  <input type="text" placeholder="username" name="logout">
+  <p><%=username%>
   <button type="submit">Logout</button>
-  <%=username%>
+
 </form>
 <% } %>

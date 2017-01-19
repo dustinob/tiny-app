@@ -84,11 +84,17 @@ app.post("/urls/:id", (req, res) => {
   res.redirect(`${shortURL}`);
 })
 
+// Login request
 app.post("/login", (req, res) => {
   res.cookie("username", req.body.username);
   res.redirect("/urls");
 })
 
+//Logout request
+app.post("/logout", (req, res) => {
+  res.clearCookie("username");
+  res.redirect("/urls");
+})
 
 
 
