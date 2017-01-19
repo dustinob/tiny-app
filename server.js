@@ -47,7 +47,7 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
-
+//show page
 app.get("/urls/:id", (req, res) => {
   var short = req.params.id;
   var long = urlDatabase[short];
@@ -64,13 +64,20 @@ app.get("/u/:shortURL", (req, res) => {
 })
 
 //delete urls from the list
-app.post("/urls/:id/delete", (req,res) => {
+app.post("/urls/:id/delete", (req, res) => {
   let shortURL = req.params.id;
   delete urlDatabase[shortURL];
   res.redirect("/urls");
 })
 
+//update urls
+app.post("/urls/:id", (req, res) => {
+  let shortURL = req.params.id
+  let longURL = req.body.longURL;
+  urlDatabase[shortURL] = longURL;
+  res.redirect(`${shortURL}`);
 
+})
 
 function generateRandonString() {
   var chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";

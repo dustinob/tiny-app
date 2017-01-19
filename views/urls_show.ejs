@@ -4,6 +4,15 @@
   </head>
 <body>
   <% include partials/_header %>
+
   <a href="<%= longURL%>"><%= longURL%></a>
-</body>
+
+  <form method="POST" action="<%= shortURL %>">
+
+    <label for="longURL">Enter a New URL:</label>
+
+    <input id="longURL" type="text" name="longURL" placeholder="http://" style="width: 300px" />
+
+    <input type="submit" value="Submit" />
+  </form>
 </html>
