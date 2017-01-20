@@ -10,19 +10,31 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 
 
-var urlDatabase = {
+let urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
 
+let users = {
+
+}
+
+app.use( (request, response, next) => {
+  response.locals.userID = request.userID;
+  response.locals.username = request.username;
+  response.locals.email = request.email;
+  response.locals.password = request.password;
+  next();
+});
+
 // default Hello to test server is running on root "/"
-app.get("/", (req, res) => {
-  res.end("Hello!!");
+app.get("/", (request, response) => {
+  response.end("Hello!!");
 });
 
 //parse database to json object... i think
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
+app.get("/urls.json", (request, response) => {
+  response.json(urlDatabase);
 });
 
 //tell server to listen on PORT
@@ -31,74 +43,102 @@ app.listen(PORT, () => {
 });
 
 //take long url and add short url and enter them into the database
-app.post("/urls", (req, res) => {
-  var shortURL = generateRandonString();
-  var longURL = req.body.longURL;
+app.post("/urls", (request, response) => {
+  let shortURL = generateRandomString();
+  let longURL = request.body.longURL;
   urlDatabase[shortURL] = longURL;
-  res.redirect("/urls");
+  let templateVars = {  username: request.cookies["username"],
+                        urls: urlDatabase}
+  response.redirect("/urls");
 });
 
 //display all short and long urls on the main page.
-app.get("/urls", (req, res) => {
-  let templateVars = {  username: req.cookies["username"],
+app.get("/urls", (request, response) => {
+  let templateVars = {  username: request.cookies["username"],
+                        id: request.cookies["userID"],
                         urls: urlDatabase };
-  res.render("urls_index", templateVars);
+  // response.cookie("userID", userID);
+  response.render("urls_index", templateVars);
+
 });
 
 // render new url page
-app.get("/urls/new", (req, res) => {
-  let templateVars = { username: req.cookies["username"] }
-  res.render("urls_new", templateVars);
+app.get("/urls/new", (request, response) => {
+  let templateVars = { username: request.cookies["username"] }
+  response.render("urls_new", templateVars);
 });
 
 //show page
-app.get("/urls/:id", (req, res) => {
-  var short = req.params.id;
+app.get("/urls/:id", (request, response) => {
+  var short = request.params.id;
   var long = urlDatabase[short];
-  let templateVars = {  username: req.cookies["username"],
-                        shortURL: short,
-                        longURL: long };
-  res.render("urls_show", templateVars);
+  response.cookie("userID", users[userID]);
+  response.render("urls_show", templateVars);
 });
 
 
-
-app.get("/u/:shortURL", (req, res) => {
-  let shortURL = req.params.shortURL;
+//testing if short urls work
+app.get("/u/:shortURL", (request, response) => {
+  let shortURL = request.params.shortURL;
   let longURL = urlDatabase[shortURL];
-  res.redirect(longURL);
+  response.redirect(longURL);
 })
 
 //delete urls from the list
-app.post("/urls/:id/delete", (req, res) => {
-  let shortURL = req.params.id;
+app.post("/urls/:id/delete", (request, response) => {
+  let shortURL = request.params.id;
   delete urlDatabase[shortURL];
-  res.redirect("/urls");
+  response.redirect("/urls");
 })
 
 //update urls
-app.post("/urls/:id", (req, res) => {
-  let shortURL = req.params.id;
-  let longURL = req.body.longURL;
+app.post("/urls/:id", (request, response) => {
+  let shortURL = request.params.id;
+  let longURL = request.body.longURL;
   urlDatabase[shortURL] = longURL;
-  res.redirect(`${shortURL}`);
+  response.redirect(`${shortURL}`);
 })
 
 // Login request
-app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
-  res.redirect("/urls");
+app.post("/login", (request, response) => {
+  response.cookie("username", request.body.username);
+  response.redirect("/urls");
 })
 
 //Logout request
-app.post("/logout", (req, res) => {
-  res.clearCookie("username");
-  res.redirect("/urls");
+app.post("/logout", (request, response) => {
+  response.clearCookie("username");
+  response.redirect("/urls");
+})
+
+//Registration page
+app.get("/register", (request, response) => {
+  let templateVars = { username: request.cookies["username"] };
+  response.render("urls_register", templateVars);
+})
+
+//Registration endpoint for data
+app.post("/register", (request, response) => {
+  let userID  = generateRandomString();
+  let email   = request.body.email;
+  let password = request.body.password;
+
+  let userInfo = {  id: userID,
+                    email: email,
+                    password: password};
+  users[userID] = userInfo;
+  response.cookie("userID", userID);
+  console.log(userID);
+  response.redirect("/urls");
 })
 
 
 
-function generateRandonString() {
+
+
+
+
+function generateRandomString() {
   var chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
   var length = 6;
   var randomString = "";

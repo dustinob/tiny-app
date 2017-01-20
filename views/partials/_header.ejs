@@ -1,13 +1,12 @@
 <h1>Header</h1>
-<% if (username === undefined) { %>
+<% if (user) { %>
+  <form method="POST" action="/logout">
+    <%= username%>
+    <button type="submit">Logout</button>
+  </form>
+<% } else { %>
   <form method="POST" action="/login">
     <input type="text" placeholder="username" name="username">
     <input type="submit">
   </form>
-<% } else { %>
-  <form method="POST" action="/logout">
-  <p><%=username%>
-  <button type="submit">Logout</button>
-
-</form>
 <% } %>
