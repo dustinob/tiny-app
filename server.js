@@ -26,7 +26,7 @@ app.use( (request, response, next) => {
 
 // default Hello to test server is running on root "/"
 app.get("/", (request, response) => {
-  response.end("Hello!!");
+  response.redirect("/urls");
 });
 
 //parse database to json object... i think
@@ -94,10 +94,33 @@ app.post("/urls/:id", (request, response) => {
   response.redirect(`${shortUrl}`);
 })
 
+///login get
+app.get("/login", (request, response) => {
+  response.render("urls_login");
+})
+
 // Login request
 app.post("/login", (request, response) => {
-  response.cookie("user_id", user.user_id) //to do;
-  response.redirect("/urls");
+  let email     = request.body.email;
+  let password  = request.body.password;
+  for (let user_id in users) {
+    let user = users[user_id];
+    if (email === user.email) {
+      if (password !== user.password) {
+        // found email, but bad password
+        response.sendStatus(403);
+        return;
+      } else {
+        // found email, and good password!  hooray!
+        response.cookie("user_id", user_id);
+        console.log(response.cookie("user_id", user_id));
+        response.redirect("/urls");
+        return;
+      }
+    }
+  }
+  // couldn't find a matching email, therefore...
+  response.sendStatus(403);
 })
 
 //Logout request
@@ -114,7 +137,7 @@ app.get("/register", (request, response) => {
 //Registration endpoint for data
 app.post("/register", (request, response) => {
 
-  let user_id   = generateRandomString();
+
   let email     = request.body.email;
   let password  = request.body.password;
     for (let item in users) {
@@ -123,28 +146,7 @@ app.post("/register", (request, response) => {
         return response.sendStatus(400);
       }
     }
-      let userInfo = {
-        id: user_id,
-        email: email,
-        password: password
-      }
-        users[user_id] = userInfo;
-        response.cookie("user_id", user_id);
-        response.redirect("/");
-});
-
-//Login endpoint for get request
-app.post("/login", (request, response) => {
-
-  let user_id   = generateRandomString();
-  let email     = request.body.email;
-  let password  = request.body.password;
-    for (let item in users) {
-      let value = users[item];
-      if(email === value.email) {
-        return response.sendStatus(400);
-      }
-    }
+      let user_id   = generateRandomString();
       let userInfo = {
         id: user_id,
         email: email,
