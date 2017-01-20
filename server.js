@@ -16,14 +16,11 @@ let urlDatabase = {
 };
 
 let users = {
-
+  "exampleUser_id": {id: "exampleUser_id", email: "user@example.com", password: "passwordtemp"}
 }
 
 app.use( (request, response, next) => {
-  response.locals.userID = request.userID;
-  response.locals.username = request.username;
-  response.locals.email = request.email;
-  response.locals.password = request.password;
+  response.locals.user = users[request.cookies.user_id]
   next();
 });
 
@@ -44,98 +41,119 @@ app.listen(PORT, () => {
 
 //take long url and add short url and enter them into the database
 app.post("/urls", (request, response) => {
-  let shortURL = generateRandomString();
-  let longURL = request.body.longURL;
-  urlDatabase[shortURL] = longURL;
-  let templateVars = {  username: request.cookies["username"],
-                        urls: urlDatabase}
+  let shortUrl = generateRandomString();
+  let longUrl = request.body.longUrl;
+  urlDatabase[shortUrl] = longUrl;
   response.redirect("/urls");
 });
 
 //display all short and long urls on the main page.
 app.get("/urls", (request, response) => {
-  let templateVars = {  username: request.cookies["username"],
-                        id: request.cookies["userID"],
-                        urls: urlDatabase };
-  // response.cookie("userID", userID);
+  let templateVars = {
+    urls: urlDatabase
+  };
   response.render("urls_index", templateVars);
 
 });
 
 // render new url page
 app.get("/urls/new", (request, response) => {
-  let templateVars = { username: request.cookies["username"] }
-  response.render("urls_new", templateVars);
+  response.render("urls_new");
 });
 
 //show page
 app.get("/urls/:id", (request, response) => {
-  var short = request.params.id;
-  var long = urlDatabase[short];
-  response.cookie("userID", users[userID]);
+  let short = request.params.id;
+  let long  = urlDatabase[short];
+  let templateVars = {
+    shortUrl: short,
+    longUrl: long
+  };
   response.render("urls_show", templateVars);
 });
 
-
 //testing if short urls work
-app.get("/u/:shortURL", (request, response) => {
-  let shortURL = request.params.shortURL;
-  let longURL = urlDatabase[shortURL];
-  response.redirect(longURL);
+app.get("/u/:shortUrl", (request, response) => {
+  let shortUrl = request.params.shortUrl;
+  let longUrl = urlDatabase[shortUrl];
+  response.redirect(longUrl);
 })
 
 //delete urls from the list
 app.post("/urls/:id/delete", (request, response) => {
-  let shortURL = request.params.id;
-  delete urlDatabase[shortURL];
+  let shortUrl = request.params.id;
+  delete urlDatabase[shortUrl];
   response.redirect("/urls");
 })
 
 //update urls
 app.post("/urls/:id", (request, response) => {
-  let shortURL = request.params.id;
-  let longURL = request.body.longURL;
-  urlDatabase[shortURL] = longURL;
-  response.redirect(`${shortURL}`);
+  let shortUrl = request.params.id;
+  let longUrl = request.body.longUrl;
+  urlDatabase[shortUrl] = longUrl;
+  response.redirect(`${shortUrl}`);
 })
 
 // Login request
 app.post("/login", (request, response) => {
-  response.cookie("username", request.body.username);
+  response.cookie("user_id", user.user_id) //to do;
   response.redirect("/urls");
 })
 
 //Logout request
 app.post("/logout", (request, response) => {
-  response.clearCookie("username");
+  response.clearCookie("user_id");
   response.redirect("/urls");
 })
 
 //Registration page
 app.get("/register", (request, response) => {
-  let templateVars = { username: request.cookies["username"] };
-  response.render("urls_register", templateVars);
+  response.render("urls_register");
 })
 
 //Registration endpoint for data
 app.post("/register", (request, response) => {
-  let userID  = generateRandomString();
-  let email   = request.body.email;
-  let password = request.body.password;
 
-  let userInfo = {  id: userID,
-                    email: email,
-                    password: password};
-  users[userID] = userInfo;
-  response.cookie("userID", userID);
-  console.log(userID);
-  response.redirect("/urls");
-})
+  let user_id   = generateRandomString();
+  let email     = request.body.email;
+  let password  = request.body.password;
+    for (let item in users) {
+      let value = users[item];
+      if(email === value.email) {
+        return response.sendStatus(400);
+      }
+    }
+      let userInfo = {
+        id: user_id,
+        email: email,
+        password: password
+      }
+        users[user_id] = userInfo;
+        response.cookie("user_id", user_id);
+        response.redirect("/");
+});
 
+//Login endpoint for get request
+app.post("/login", (request, response) => {
 
-
-
-
+  let user_id   = generateRandomString();
+  let email     = request.body.email;
+  let password  = request.body.password;
+    for (let item in users) {
+      let value = users[item];
+      if(email === value.email) {
+        return response.sendStatus(400);
+      }
+    }
+      let userInfo = {
+        id: user_id,
+        email: email,
+        password: password
+      }
+        users[user_id] = userInfo;
+        response.cookie("user_id", user_id);
+        response.redirect("/");
+});
 
 
 function generateRandomString() {

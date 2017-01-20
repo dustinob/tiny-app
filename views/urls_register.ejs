@@ -4,12 +4,15 @@
     <title>Register</title>
   </head>
     <body>
+    <h1>Register</h1>
+    <% if (user) { %>
       <%- include partials/_header %>
-
-      <form method="POST" action="/register">
+      <% } else { %>
+        <form method="POST" action="/register">
         Email:<input type="email" name="email" placeholder="example@email.com">
         Password:<input type="password" name="password">
         <input type="submit" value="Submit">
       </form>
+      <% } %>
     </body>
 <html>

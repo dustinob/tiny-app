@@ -1,12 +1,14 @@
-<h1>Header</h1>
 <% if (user) { %>
-  <form method="POST" action="/logout">
-    <%= username%>
+    <%= user.email%>
     <button type="submit">Logout</button>
   </form>
 <% } else { %>
   <form method="POST" action="/login">
-    <input type="text" placeholder="username" name="username">
+    Login >>>
+    Username:<input type="text" placeholder="username" name="username">
+    Password:<input type="text" placeholder="password" name="password">
     <input type="submit">
+    <br>
+    <a href="/register">Register for an account here</a>
   </form>
 <% } %>
