@@ -3,6 +3,7 @@
   <head>
     <title>New URL</title>
   </head>
+  <% if(user) { %>
     <body style="font-size: 20px; padding: 50px">
       <%- include partials/_header %>
         <h1>Enter a new URL</h1>
@@ -11,6 +12,9 @@
         <input id="longUrl" type="text" name="longUrl" placeholder="http://" style="width: 300px">
         <input type="Submit" value="Submit">
       </form>
-
     </body>
+  <% } else { %>
+    <h2>Please login to add urls</h2>
+    <a href="/login">Login</a>
+  <% } %>
 </html>

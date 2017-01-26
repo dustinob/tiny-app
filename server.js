@@ -9,29 +9,30 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 app.set("view engine", "ejs");
 
-
+// Url Database
 let urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
-};
-
-let users = {
-  "exampleUser_id": {id: "exampleUser_id", email: "user@example.com", password: "passwordtemp"}
+  "b2xVn2": {
+    shortUrl: "b2xVn2",
+    longUrl: "http://www.lighthouselabs.ca",
+    createdBy: "3f5f3s" }
 }
 
-app.use( (request, response, next) => {
+//User Database
+let users = {
+  "3f5f3s": {
+    id: "3f5f3s",
+    email: "user@example.com",
+    password: "password" }
+}
+
+app.use((request, response, next) => {
   response.locals.user = users[request.cookies.user_id]
   next();
 });
 
 // default Hello to test server is running on root "/"
 app.get("/", (request, response) => {
-  response.redirect("/urls");
-});
-
-//parse database to json object... i think
-app.get("/urls.json", (request, response) => {
-  response.json(urlDatabase);
+  response.redirect("/login");
 });
 
 //tell server to listen on PORT
@@ -43,8 +44,11 @@ app.listen(PORT, () => {
 app.post("/urls", (request, response) => {
   let shortUrl = generateRandomString();
   let longUrl = request.body.longUrl;
-  urlDatabase[shortUrl] = longUrl;
+  let createdBy = request.cookies.user_id;
+  urlDatabase[shortUrl] = {longUrl: longUrl,
+    createdBy: createdBy};
   response.redirect("/urls");
+  console.log(urlDatabase);
 });
 
 //display all short and long urls on the main page.
@@ -52,8 +56,8 @@ app.get("/urls", (request, response) => {
   let templateVars = {
     urls: urlDatabase
   };
-  response.render("urls_index", templateVars);
 
+  response.render("urls_index", templateVars);
 });
 
 // render new url page
@@ -64,7 +68,7 @@ app.get("/urls/new", (request, response) => {
 //show page
 app.get("/urls/:id", (request, response) => {
   let short = request.params.id;
-  let long  = urlDatabase[short];
+  let long  = urlDatabase[short].longUrl;
   let templateVars = {
     shortUrl: short,
     longUrl: long
@@ -90,7 +94,7 @@ app.post("/urls/:id/delete", (request, response) => {
 app.post("/urls/:id", (request, response) => {
   let shortUrl = request.params.id;
   let longUrl = request.body.longUrl;
-  urlDatabase[shortUrl] = longUrl;
+  urlDatabase[shortUrl].longUrl = longUrl;
   response.redirect(`${shortUrl}`);
 })
 
@@ -113,7 +117,6 @@ app.post("/login", (request, response) => {
       } else {
         // found email, and good password!  hooray!
         response.cookie("user_id", user_id);
-        console.log(response.cookie("user_id", user_id));
         response.redirect("/urls");
         return;
       }
@@ -126,7 +129,7 @@ app.post("/login", (request, response) => {
 //Logout request
 app.post("/logout", (request, response) => {
   response.clearCookie("user_id");
-  response.redirect("/urls");
+  response.redirect("/login");
 })
 
 //Registration page
@@ -136,28 +139,27 @@ app.get("/register", (request, response) => {
 
 //Registration endpoint for data
 app.post("/register", (request, response) => {
-
-
-  let email     = request.body.email;
-  let password  = request.body.password;
-    for (let item in users) {
-      let value = users[item];
-      if(email === value.email) {
-        return response.sendStatus(400);
-      }
+  let email = request.body.email;
+  let password = request.body.password;
+  for (let item in users) {
+    let value = users[item];
+    if(email === value.email) {
+      return response.sendStatus(400);
     }
-      let user_id   = generateRandomString();
-      let userInfo = {
-        id: user_id,
-        email: email,
-        password: password
-      }
-        users[user_id] = userInfo;
-        response.cookie("user_id", user_id);
-        response.redirect("/");
+  }
+
+  let user_id   = generateRandomString();
+  let userInfo = {
+    id: user_id,
+    email: email,
+    password: password
+  }
+  users[user_id] = userInfo;
+  response.cookie("user_id", user_id);
+  response.redirect("/urls");
 });
 
-
+//
 function generateRandomString() {
   var chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
   var length = 6;
@@ -167,3 +169,5 @@ function generateRandomString() {
   }
   return randomString;
 }
+
+generateRandomString();
