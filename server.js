@@ -1,8 +1,14 @@
 const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 8080;
-const cookieParser = require("cookie-parser");
-app.use(cookieParser());
+const cookieSession = require("cookie-session");
+app.use(cookieSession( {
+  name: 'session',
+  keys: ['secret'],
+  maxAge: 24 * 60 * 60 * 1000
+}));
+
+const bcrypt = require("bcrypt");
 
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
@@ -26,8 +32,8 @@ let users = {
 }
 
 app.use((request, response, next) => {
-  request.logged_in = request.cookies.user_id;
-  response.locals.user = users[request.cookies.user_id]
+  request.logged_in = request.session.user_id;
+  response.locals.user = users[request.session.user_id]
   next();
 });
 
@@ -36,16 +42,11 @@ app.get('/urls.json', (req, res) => {
 });
 
 app.get("/", (request, response) => {
-  // if(response.locals.user) {
-  //   response.redirect("/urls");
-  //   return;
-  // }
-  response.redirect("/urls");
-});
-
-//tell server to listen on PORT
-app.listen(PORT, () => {
-  console.log(`Express Server listening on port ${PORT}!`);
+  if(response.locals.user) {
+    response.redirect("/urls");
+    return;
+  }
+  response.redirect("/login");
 });
 
 //take long url and add short url and enter them into the database
@@ -53,7 +54,7 @@ app.post("/urls", (request, response) => {
   if (request.logged_in) {
     let shortUrl = generateRandomString();
     let longUrl = request.body.longUrl;
-    let createdBy = request.cookies.user_id;
+    let createdBy = request.session.user_id;
     urlDatabase[shortUrl] = {
       shortUrl: shortUrl,
       longUrl: longUrl,
@@ -81,11 +82,7 @@ app.get("/urls", (request, response) => {
     response.render("urls_index", templateVars);
   }
   else {
-    let templateVars = {
-      urls: urlDatabase
-    };
-    response.render("urls_index", templateVars);
-   // response.status(401).send("Please <a href='/login'>Login Here</a>");
+    response.status(401).send("Please <a href='/login'>Login Here</a>");
   }
 });
 
@@ -112,7 +109,7 @@ app.get("/urls/:id", (request, response) => {
     return;
   }
   if(response.locals.user.id !== urlDatabase[request.params.id].createdBy) {
-    response.status(403).send("Fuck off! This is not yours!");
+    response.status(403).send("This is not yours!");
   }
   let long  = urlDatabase[short].longUrl;
   let templateVars = {
@@ -152,7 +149,7 @@ app.post("/urls/:id", (request, response) => {
     return;
   }
   if(response.locals.user.id !== urlDatabase[request.params.id].createdBy) {
-    response.status(403).send("Fuck off! This is not yours!");
+    response.status(403).send("This is not yours!");
     return;
   }
 
@@ -175,20 +172,23 @@ app.get("/login", (request, response) => {
 app.post("/login", (request, response) => {
   let email     = request.body.email;
   let password  = request.body.password;
+
   if(email === "" || password === "") {
-    response.status(401).send("Fuck off! Use your fat fingers to enter something");
+    response.status(401).send("Use your fingers to enter something");
     return;
   }
     for (let user_id in users) {
       let user = users[user_id];
+      let hashed_password = bcrypt.compareSync(password, users[user_id].password);
       if (email === user.email) {
-        if (password !== user.password) {
+
+        if (!hashed_password) {
           // found email, but bad password
           response.send(403, "Found email, but bad password");
           return;
         } else {
           // found email, and good password!  hooray!
-          response.cookie("user_id", user_id);
+          request.session.user_id = user_id;
           response.redirect("/");
           return;
         }
@@ -199,7 +199,7 @@ app.post("/login", (request, response) => {
 
 //Logout request
 app.post("/logout", (request, response) => {
-  response.clearCookie("user_id");
+  request.session.user_id = null;
   response.redirect("/");
 })
 
@@ -216,8 +216,10 @@ app.get("/register", (request, response) => {
 app.post("/register", (request, response) => {
   let email = request.body.email;
   let password = request.body.password;
+  let hashed_password = bcrypt.hashSync(password, 10);
+
   if (email === "" || password === "") {
-    response.status(400).send("Fuck off! Use your fat fingers to enter something");
+    response.status(400).send("Use your fingers to enter something");
     return;
   }
     for (let item in users) {
@@ -231,10 +233,10 @@ app.post("/register", (request, response) => {
   let userInfo = {
     id: user_id,
     email: email,
-    password: password
+    password: hashed_password
   }
   users[user_id] = userInfo;
-  response.cookie("user_id", user_id);
+  request.session.user_id = user_id;
   response.redirect("/urls");
 });
 
@@ -249,8 +251,10 @@ function generateRandomString() {
   return randomString;
 }
 
-generateRandomString();
-
+//tell server to listen on PORT
+app.listen(PORT, () => {
+  console.log(`Express Server listening on port ${PORT}!`);
+});
 
 
 
