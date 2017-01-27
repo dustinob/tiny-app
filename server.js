@@ -36,11 +36,11 @@ app.get('/urls.json', (req, res) => {
 });
 
 app.get("/", (request, response) => {
-  if(response.locals.user) {
-    response.redirect("/urls");
-    return;
-  }
-  response.redirect("/login");
+  // if(response.locals.user) {
+  //   response.redirect("/urls");
+  //   return;
+  // }
+  response.redirect("/urls");
 });
 
 //tell server to listen on PORT
@@ -81,7 +81,11 @@ app.get("/urls", (request, response) => {
     response.render("urls_index", templateVars);
   }
   else {
-    response.status(401).send("Please <a href='/login'>Login Here</a>");
+    let templateVars = {
+      urls: urlDatabase
+    };
+    response.render("urls_index", templateVars);
+   // response.status(401).send("Please <a href='/login'>Login Here</a>");
   }
 });
 
@@ -246,3 +250,9 @@ function generateRandomString() {
 }
 
 generateRandomString();
+
+
+
+
+
+
