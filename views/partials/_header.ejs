@@ -1,8 +1,10 @@
 <% if (user) { %>
     <%= user.email%>
+    <a href="/urls">My Links</a>
     <form method="POST" action="/logout">
       <button type="submit">Logout</button>
     </form>
 <% } else { %>
     <a href="/login"> Login here</a>
+    <a hred="/register">Register</a>
 <% } %>

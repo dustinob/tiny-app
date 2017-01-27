@@ -4,8 +4,12 @@
   </head>
 <body>
   <%- include partials/_header %>
+  <a href="/u/<%= shortUrl%>"><%= shortUrl%></a>
   <a href="<%= longUrl%>"><%= longUrl%></a>
-  <form method="POST" action="<%= shortUrl %>">
+  <form method="POST" action="/urls/<%= shortUrl %>/delete">
+    <input type="submit" value="Delete">
+  </form>
+  <form method="POST" action="/urls/<%= shortUrl %>">
     <label for="longUrl">Enter a New URL:</label>
     <input id="longUrl" type="text" name="longUrl" placeholder="http://" style="width: 300px" >
     <input type="submit" value="Submit" >

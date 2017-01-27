@@ -26,12 +26,20 @@ let users = {
 }
 
 app.use((request, response, next) => {
+  request.logged_in = request.cookies.user_id;
   response.locals.user = users[request.cookies.user_id]
   next();
 });
 
-// default Hello to test server is running on root "/"
+app.get('/urls.json', (req, res) => {
+   res.json(urlDatabase);
+});
+
 app.get("/", (request, response) => {
+  if(response.locals.user) {
+    response.redirect("/urls");
+    return;
+  }
   response.redirect("/login");
 });
 
@@ -42,32 +50,66 @@ app.listen(PORT, () => {
 
 //take long url and add short url and enter them into the database
 app.post("/urls", (request, response) => {
-  let shortUrl = generateRandomString();
-  let longUrl = request.body.longUrl;
-  let createdBy = request.cookies.user_id;
-  urlDatabase[shortUrl] = {longUrl: longUrl,
-    createdBy: createdBy};
-  response.redirect("/urls");
-  console.log(urlDatabase);
+  if (request.logged_in) {
+    let shortUrl = generateRandomString();
+    let longUrl = request.body.longUrl;
+    let createdBy = request.cookies.user_id;
+    urlDatabase[shortUrl] = {
+      shortUrl: shortUrl,
+      longUrl: longUrl,
+      createdBy: createdBy};
+    response.redirect("/urls");
+  }
+  else {
+    response.status(401).send("Please <a href='/login'>Login Here</a>");
+  }
 });
 
 //display all short and long urls on the main page.
 app.get("/urls", (request, response) => {
-  let templateVars = {
-    urls: urlDatabase
-  };
+  if (response.locals.user) {
+    const filteredDatabase = {};
 
-  response.render("urls_index", templateVars);
+    for(let url in urlDatabase) {
+      if (response.locals.user.id === urlDatabase[url].createdBy) {
+        filteredDatabase[url] = urlDatabase[url];
+      }
+    }
+    let templateVars = {
+      urls: filteredDatabase
+    }
+    response.render("urls_index", templateVars);
+  }
+  else {
+    response.status(401).send("Please <a href='/login'>Login Here</a>");
+  }
 });
 
 // render new url page
 app.get("/urls/new", (request, response) => {
-  response.render("urls_new");
+  if (response.locals.user) {
+    response.render("urls_new");
+  }
+  else {
+    response.status(401).send("Please <a href='/login'>Login Here</a>");
+  }
 });
 
 //show page
 app.get("/urls/:id", (request, response) => {
+
   let short = request.params.id;
+  if(!urlDatabase[short]) {
+    response.status(404).send("Short Url not found");
+    return;
+  }
+  if (!response.locals.user) {
+    response.status(401).send("Please <a href='/login'>Login Here</a>");
+    return;
+  }
+  if(response.locals.user.id !== urlDatabase[request.params.id].createdBy) {
+    response.status(403).send("Fuck off! This is not yours!");
+  }
   let long  = urlDatabase[short].longUrl;
   let templateVars = {
     shortUrl: short,
@@ -76,12 +118,16 @@ app.get("/urls/:id", (request, response) => {
   response.render("urls_show", templateVars);
 });
 
-//testing if short urls work
+
 app.get("/u/:shortUrl", (request, response) => {
+
   let shortUrl = request.params.shortUrl;
-  let longUrl = urlDatabase[shortUrl];
+  if(!urlDatabase[shortUrl]) {
+    response.status(404).send("URL doesn not exist");
+  }
+  let longUrl = urlDatabase[shortUrl].longUrl;
   response.redirect(longUrl);
-})
+});
 
 //delete urls from the list
 app.post("/urls/:id/delete", (request, response) => {
@@ -93,60 +139,89 @@ app.post("/urls/:id/delete", (request, response) => {
 //update urls
 app.post("/urls/:id", (request, response) => {
   let shortUrl = request.params.id;
+  if(!urlDatabase[shortUrl]) {
+    response.status(404).send("Short Url not found");
+    return;
+  }
+  if (!response.locals.user) {
+    response.status(401).send("Please <a href='/login'>Login Here</a>");
+    return;
+  }
+  if(response.locals.user.id !== urlDatabase[request.params.id].createdBy) {
+    response.status(403).send("Fuck off! This is not yours!");
+    return;
+  }
+
+
   let longUrl = request.body.longUrl;
   urlDatabase[shortUrl].longUrl = longUrl;
-  response.redirect(`${shortUrl}`);
+  response.redirect(`/urls/${shortUrl}`);
 })
 
 ///login get
 app.get("/login", (request, response) => {
-  response.render("urls_login");
+  if(!response.locals.user) {
+    response.render("urls_login");
+    return;
+  }
+  response.redirect("/urls");
 })
 
 // Login request
 app.post("/login", (request, response) => {
   let email     = request.body.email;
   let password  = request.body.password;
-  for (let user_id in users) {
-    let user = users[user_id];
-    if (email === user.email) {
-      if (password !== user.password) {
-        // found email, but bad password
-        response.sendStatus(403);
-        return;
-      } else {
-        // found email, and good password!  hooray!
-        response.cookie("user_id", user_id);
-        response.redirect("/urls");
-        return;
+  if(email === "" || password === "") {
+    response.status(401).send("Fuck off! Use your fat fingers to enter something");
+    return;
+  }
+    for (let user_id in users) {
+      let user = users[user_id];
+      if (email === user.email) {
+        if (password !== user.password) {
+          // found email, but bad password
+          response.send(403, "Found email, but bad password");
+          return;
+        } else {
+          // found email, and good password!  hooray!
+          response.cookie("user_id", user_id);
+          response.redirect("/");
+          return;
+        }
       }
     }
-  }
-  // couldn't find a matching email, therefore...
-  response.sendStatus(403);
-})
+
+});
 
 //Logout request
 app.post("/logout", (request, response) => {
   response.clearCookie("user_id");
-  response.redirect("/login");
+  response.redirect("/");
 })
 
 //Registration page
 app.get("/register", (request, response) => {
-  response.render("urls_register");
+   if(!response.locals.user) {
+    response.render("urls_register");
+    return;
+  }
+  response.redirect("/");
 })
 
 //Registration endpoint for data
 app.post("/register", (request, response) => {
   let email = request.body.email;
   let password = request.body.password;
-  for (let item in users) {
-    let value = users[item];
-    if(email === value.email) {
-      return response.sendStatus(400);
-    }
+  if (email === "" || password === "") {
+    response.status(400).send("Fuck off! Use your fat fingers to enter something");
+    return;
   }
+    for (let item in users) {
+      let value = users[item];
+      if(email === value.email) {
+        response.status(400).send("Email taken! Try again!");
+      }
+    }
 
   let user_id   = generateRandomString();
   let userInfo = {

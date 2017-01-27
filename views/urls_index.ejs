@@ -5,11 +5,12 @@
   </head>
 <body>
   <%- include partials/_header %>
+
   <ul>
     <% for (let shortUrl in urls) { %>
       <li>
         <% let longUrl = urls[shortUrl].longUrl; %>
-        ShortURL: <%= shortUrl %>
+        ShortURL: <a href="/u/<%= shortUrl%>"><%= shortUrl %></a>
         LongURL: <a href="<%= longUrl %>"><%= longUrl %></a>
 
         <form method="POST" action="/urls/<%= shortUrl %>/delete">
